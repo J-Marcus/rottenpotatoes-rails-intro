@@ -11,15 +11,41 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
-    @movies = if params[:sort_by] == "title" 
-      Movie.order(:title)
-    elsif params[:sort_by] == "release date"
-      Movie.order(:release_date)
-    else
-      Movie.all
+    @all_ratings = Movie.get_ratings()
+    
+    unless params[:ratings].nil?
+        @checked_ratings = params[:ratings]
+        session[:checked_ratings] = @checked_ratings
     end
-    @highlight = params[:sort_by]
+    
+    if params[:sort].nil?
+    else
+        session[:sort] = params[:sort]
+    end
+    
+    if params[:sort].nil? && params[:ratings].nil? && session[:checked_ratings]
+        @checked_ratings = session[:checked_ratings]        #basically allocate in memory
+        @sort = session[:sort]      #basically allocate in memory
+        flash.keep      #save to remember!
+        redirect_to movies_path({order_by: @sort, ratings: @checked_ratings})   #will let the checkboxes go back to previous state if none is selected
+    end
+    
+    @movies = Movie.all     #default display
+    
+    if session[:checked_ratings]
+        @movies = @movies.select{ |movie| session[:checked_ratings].include? movie.rating}
+    end
+    
+    case session[:sort]
+    when 'title'            #highglights the movie title column when selected
+        @movies = @movies.sort { |a,b| a.title <=> b.title}
+        @movie_highlight = "hilite" #created a class in movies/index.html.haml to use this, 'hilite from default.css'
+    when 'release_date'     #highlights the release date column when selected
+        @movies = @movies.sort { |a,b| a.release_date <=> b.release_date }
+        @release_highlight = "hilite"   #created a class in movies/index.html.haml to use this, 'hilite from default.css'
+    else 
+        session[:sort] == "release_date"
+    end
   end
 
   def new
