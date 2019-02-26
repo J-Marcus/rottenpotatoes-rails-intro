@@ -16,7 +16,8 @@ class MoviesController < ApplicationController
     else
       Movie.all
     end
-      end
+    @highlight = params[:sort_by]
+  end
 
   def new
     # default: render 'new' template
